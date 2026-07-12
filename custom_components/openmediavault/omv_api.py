@@ -166,7 +166,25 @@ class OpenMediaVaultAPI(object):
                 self.lock.release()
                 return False
 
-            if not data["response"]["authenticated"]:
+            resp = data["response"]
+
+            # OMV >= 8.5.0 uses "status" string instead of "authenticated" bool
+            if "authenticated" in resp:
+                # Legacy schema (OMV < 8.5.0)
+                authenticated = resp["authenticated"]
+            elif "status" in resp:
+                # New schema (OMV >= 8.5.0)
+                authenticated = resp["status"] == "authenticated"
+            else:
+                # Unknown schema - log for debugging
+                _LOGGER.warning(
+                    "OpenMediaVault %s unexpected auth response schema: %s",
+                    self._host,
+                    list(resp.keys()),
+                )
+                authenticated = False
+
+            if not authenticated:
                 _LOGGER.error("OpenMediaVault %s authenticated failed", self._host)
                 self.error_to_strings()
                 self._connection = None
@@ -177,8 +195,17 @@ class OpenMediaVaultAPI(object):
             error = True
             self.error_to_strings("%s" % api_error)
             self._connection = None
-        except Exception:
+        except (requests.exceptions.Timeout, requests.exceptions.RequestException) as api_error:
             error = True
+            self.error_to_strings("%s" % api_error)
+            self._connection = None
+        except Exception as api_error:
+            error = True
+            _LOGGER.warning(
+                "OpenMediaVault %s unexpected error during connect: %s",
+                self._host,
+                api_error,
+            )
         else:
             if self.connection_error_reported:
                 _LOGGER.warning("OpenMediaVault %s reconnected", self._host)
