@@ -195,9 +195,29 @@ class OpenMediaVaultAPI(object):
             error = True
             self.error_to_strings("%s" % api_error)
             self._connection = None
-        except (requests.exceptions.Timeout, requests.exceptions.RequestException) as api_error:
+        except (
+            requests.exceptions.Timeout,
+            requests.exceptions.RequestException,
+        ) as api_error:
             error = True
             self.error_to_strings("%s" % api_error)
+            self._connection = None
+        except json.decoder.JSONDecodeError as api_error:
+            # The request itself succeeded (we have an HTTP response), but the
+            # body wasn't valid JSON - previously this fell through to the
+            # generic "unexpected error" branch below, which never logged the
+            # actual response content, so the real cause (an HTML error page,
+            # an auth/CSRF redirect, a proxy in the way, etc.) was invisible
+            # and the user only ever saw the generic "cannot_connect" error.
+            error = True
+            body_preview = (response.text or "")[:500] if response is not None else ""
+            _LOGGER.error(
+                "OpenMediaVault %s returned a non-JSON response (HTTP %s): %s | %s",
+                self._host,
+                getattr(response, "status_code", "unknown"),
+                api_error,
+                body_preview or "<empty body>",
+            )
             self._connection = None
         except Exception as api_error:
             error = True
@@ -306,10 +326,22 @@ class OpenMediaVaultAPI(object):
             else:
                 error = True
 
-        except (
-            requests.exceptions.ConnectionError,
-            json.decoder.JSONDecodeError,
-        ) as api_error:
+        except json.decoder.JSONDecodeError as api_error:
+            # See the matching branch in connect() - the request succeeded
+            # but the body wasn't valid JSON, so log what OMV actually sent
+            # back instead of only the generic "unable to fetch data".
+            body_preview = (response.text or "")[:500] if response is not None else ""
+            _LOGGER.warning(
+                "OpenMediaVault %s returned a non-JSON response (HTTP %s): %s | %s",
+                self._host,
+                getattr(response, "status_code", "unknown"),
+                api_error,
+                body_preview or "<empty body>",
+            )
+            self.disconnect("query", api_error)
+            self.lock.release()
+            return None
+        except requests.exceptions.ConnectionError as api_error:
             _LOGGER.warning("OpenMediaVault %s unable to fetch data", self._host)
             self.disconnect("query", api_error)
             self.lock.release()
