@@ -3,6 +3,7 @@
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
+from homeassistant.helpers.device_registry import DeviceEntry
 
 from .const import DOMAIN, PLATFORMS
 from .omv_controller import OMVControllerData
@@ -53,7 +54,7 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
 #   async_unload_entry
 # ---------------------------
 async def async_unload_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> bool:
-    """Unload TrueNAS config entry."""
+    """Unload OMV config entry."""
     unload_ok = await hass.config_entries.async_unload_platforms(
         config_entry, PLATFORMS
     )
@@ -62,4 +63,29 @@ async def async_unload_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> 
         await controller.async_reset()
         hass.data[DOMAIN].pop(config_entry.entry_id)
 
+    return True
+
+
+# ---------------------------
+#   async_remove_config_entry_device
+# ---------------------------
+async def async_remove_config_entry_device(
+    hass: HomeAssistant, config_entry: ConfigEntry, device_entry: DeviceEntry
+) -> bool:
+    """Allow manual removal of a stale device while the entry stays loaded.
+
+    Without this, Home Assistant only ever offers "disable" for devices
+    tied to a still-loaded config entry, never "delete". Device identity
+    here (see model.py's device_info) is partly derived from live data
+    (e.g. the System device keys off the fetched hostname), which only
+    ever shows its real value once a connection has actually succeeded -
+    before that, entities register under an "unknown"-keyed device. If
+    the very first connection attempt after adding the integration fails
+    (which was common before the OMV 7/8 fixes in this fork), that
+    "unknown" device is orphaned forever once a later successful update
+    creates a second, correctly-keyed device - Home Assistant does not
+    merge them automatically. Always allowing removal here is safe: any
+    device that is still genuinely backed by live entities gets
+    recreated automatically on the next coordinator update.
+    """
     return True
