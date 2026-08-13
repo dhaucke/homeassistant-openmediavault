@@ -1,4 +1,5 @@
 """OMV HA shared entity model"""
+
 from logging import getLogger
 from typing import Any
 from collections.abc import Mapping

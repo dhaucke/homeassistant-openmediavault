@@ -1,4 +1,5 @@
 """API parser for JSON APIs"""
+
 import re
 from pytz import utc
 from logging import getLogger

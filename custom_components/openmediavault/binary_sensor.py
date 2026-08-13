@@ -1,4 +1,5 @@
 """OpenMediaVault binary sensor platform."""
+
 from logging import getLogger
 from homeassistant.components.binary_sensor import BinarySensorEntity
 from .model import model_async_setup_entry, OMVEntity

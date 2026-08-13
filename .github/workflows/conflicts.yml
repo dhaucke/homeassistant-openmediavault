@@ -1,7 +1,6 @@
 name: Check for PR merge conflicts
 
 on:
-  push:
   pull_request:
       types: [opened, synchronize, reopened]
 jobs:

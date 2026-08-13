@@ -1,4 +1,5 @@
 """Constants used by the OpenMediaVault integration."""
+
 from homeassistant.const import Platform
 
 PLATFORMS = [

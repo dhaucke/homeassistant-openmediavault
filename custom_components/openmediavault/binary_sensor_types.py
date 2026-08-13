@@ -1,4 +1,5 @@
 """Definitions for OMV binary sensor entities."""
+
 from dataclasses import dataclass, field
 from typing import List
 from homeassistant.helpers.entity import EntityCategory
@@ -8,7 +9,6 @@ from homeassistant.components.binary_sensor import (
 )
 
 from .const import DOMAIN
-
 
 DEVICE_ATTRIBUTES_SERVICE = [
     "name",

@@ -1,4 +1,5 @@
 """Definitions for OMV sensor entities."""
+
 from dataclasses import dataclass, field
 from typing import List
 from homeassistant.helpers.entity import EntityCategory
