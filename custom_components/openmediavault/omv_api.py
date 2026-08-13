@@ -291,8 +291,20 @@ class OpenMediaVaultAPI(object):
         method: str,
         params: dict[str, Any] | None = {},
         options: dict[str, Any] | None = {"updatelastaccess": True},
+        soft_fail: bool = False,
     ) -> Optional(list):
-        """Retrieve data from OMV."""
+        """Retrieve data from OMV.
+
+        soft_fail: don't tear down the whole connection (disconnect() /
+        self._connected = False, which triggers a 58s reconnect cooldown
+        for every other query) over a single failing call. Real-world OMV
+        7/8 installs have confirmed cases of specific calls - notably
+        Smart.getAttributes for particular disks/controllers - returning a
+        500 while the rest of the API remains perfectly healthy; without
+        this, one bad disk took every other sensor offline for a minute at
+        a time (see upstream issue #149, confirmed root cause + workaround
+        "disable S.M.A.R.T." from multiple independent reporters).
+        """
         if not self.connection_check():
             return None
 
@@ -357,6 +369,18 @@ class OpenMediaVaultAPI(object):
                 errorcode = response.status_code
             except Exception:
                 errorcode = "no_respose"
+
+            if soft_fail:
+                _LOGGER.debug(
+                    "OpenMediaVault %s unable to fetch data (%s) for %s.%s "
+                    "- soft failure, connection kept alive",
+                    self._host,
+                    errorcode,
+                    service,
+                    method,
+                )
+                self.lock.release()
+                return None
 
             _LOGGER.warning(
                 "OpenMediaVault %s unable to fetch data (%s)", self._host, errorcode

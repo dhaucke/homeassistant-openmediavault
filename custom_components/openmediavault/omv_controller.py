@@ -216,7 +216,12 @@ class OMVControllerData(object):
             vals=[
                 {"name": "hostname", "default": "unknown"},
                 {"name": "version", "default": "unknown"},
-                {"name": "cpuUsage", "default": 0.0},
+                # OMV renamed this field from "cpuUsage" to "cpuUtilization"
+                # server-side at some point after OMV 5/6 (confirmed against
+                # the current openmediavault engined source); the entity
+                # attribute name is kept as cpuUsage to avoid changing the
+                # sensor's data_attribute/unique_id.
+                {"name": "cpuUsage", "source": "cpuUtilization", "default": 0.0},
                 {"name": "memTotal", "default": 0},
                 {"name": "memUsed", "default": 0},
                 {"name": "loadAverage_1", "source": "loadAverage/1min", "default": 0.0},
@@ -360,6 +365,7 @@ class OMVControllerData(object):
                     "Smart",
                     "getAttributes",
                     {"devicefile": self.data["disk"][uid]["canonicaldevicefile"]},
+                    soft_fail=True,
                 ),
                 key="attrname",
                 vals=[

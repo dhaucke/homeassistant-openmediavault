@@ -138,7 +138,9 @@ class OMVOptionsFlowHandler(OptionsFlow):
 
     def __init__(self, config_entry):
         """Initialize options flow."""
-        self.config_entry = config_entry
+        # Do not assign self.config_entry explicitly - OptionsFlow provides
+        # it automatically since HA 2024.x, and doing so ourselves is
+        # deprecated (warned about since ~2025.12) and breaks in newer core.
         self.options = dict(config_entry.options)
 
     async def async_step_init(self, user_input=None):
