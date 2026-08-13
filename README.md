@@ -1,4 +1,4 @@
-![OpenMediaVault Integration für Home Assistant](https://raw.githubusercontent.com/dhaucke/homeassistant-openmediavault/master/assets/omv-banner.svg)
+![OpenMediaVault Integration für Home Assistant](https://raw.githubusercontent.com/dhaucke/homeassistant-openmediavault/master/assets/omv-banner.png)
 
 # OpenMediaVault
 
